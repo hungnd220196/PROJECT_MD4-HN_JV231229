@@ -16,5 +16,5 @@ public interface UserRepository extends JpaRepository<User, Long>, PagingAndSort
 
     @Query("SELECT u FROM User u WHERE u.username LIKE %:username%")
     Page<User> findByUsernameContaining(String username, Pageable pageable);
-    Page<User> findAll(Pageable pageable);
+
 }

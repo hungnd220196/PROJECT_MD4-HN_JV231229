@@ -1,10 +1,7 @@
 package com.ra.project_module4.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -15,6 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,9 +26,10 @@ public class Product {
     private String productName;
 
     private String description;
+    private Boolean status;
 
     @Column(nullable = false)
-    private BigDecimal unitPrice;
+    private Double unitPrice;
 
     @Column(nullable = false)
     private Integer stockQuantity;

@@ -14,8 +14,15 @@ import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
+
+
     @Autowired
     private UserRepository userRepository;
+
+    @Override
+    public User findById(Long id) {
+        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User Not Found"));
+    }
 
     @Override
     public Optional<User> findByUsername(String username) {
@@ -34,10 +41,10 @@ public class UserServiceImpl implements UserService {
     public Page<User> findByUsernameContaining(String searchName, Integer page, Integer itemPage, String orderBy, String direction) {
         Pageable pageable = null;
 
-        if(orderBy!=null && !orderBy.isEmpty()){
+        if (orderBy != null && !orderBy.isEmpty()) {
             // co sap xep
             Sort sort = null;
-            switch (direction){
+            switch (direction) {
                 case "ASC":
                     sort = Sort.by(orderBy).ascending();
                     break;
@@ -45,19 +52,26 @@ public class UserServiceImpl implements UserService {
                     sort = Sort.by(orderBy).descending();
                     break;
             }
-            pageable = PageRequest.of(page, itemPage,sort);
-        }else{
+            pageable = PageRequest.of(page, itemPage, sort);
+        } else {
             //khong sap xep
             pageable = PageRequest.of(page, itemPage);
         }
 
         //xu ly ve tim kiem
-        if(searchName!=null && !searchName.isEmpty()){
+        if (searchName != null && !searchName.isEmpty()) {
             //co tim kiem
-            return userRepository.findByUsernameContaining(searchName,pageable);
-        }else{
+            return userRepository.findByUsernameContaining(searchName, pageable);
+        } else {
             //khong tim kiem
             return userRepository.findAll(pageable);
         }
+    }
+
+    @Override
+    public User blockAndUnlockUser(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User Not Found"));
+        user.setStatus(!user.getStatus());
+        return userRepository.save(user);
     }
 }

@@ -4,6 +4,7 @@ import com.ra.project_module4.model.dto.request.DtoFormLogin;
 import com.ra.project_module4.model.dto.request.DtoFormRegister;
 import com.ra.project_module4.model.dto.response.JWTResponse;
 import com.ra.project_module4.model.entity.Role;
+import com.ra.project_module4.model.entity.RoleName;
 import com.ra.project_module4.model.entity.User;
 import com.ra.project_module4.repository.RoleRepository;
 import com.ra.project_module4.repository.UserRepository;
@@ -52,13 +53,19 @@ public class AuthServiceImpl implements AuthService {
         if (dtoFormRegister.getRoles() != null && !dtoFormRegister.getRoles().isEmpty()) {
             dtoFormRegister.getRoles().forEach(role -> {
                 switch (role) {
-                    case "ROLE_ADMIN", "ROLE_USER", "ROLE_MANAGER":
-                        roles.add(roleRepository.findRoleByRoleName(role).orElseThrow(() -> new NoSuchElementException("role not found")));
+                    case "ROLE_ADMIN":
+                        roles.add(roleRepository.findRoleByRoleName(RoleName.ROLE_ADMIN).orElseThrow(() -> new NoSuchElementException("role not found")));
+                        break;
+                    case "ROLE_USER":
+                        roles.add(roleRepository.findRoleByRoleName(RoleName.ROLE_USER).orElseThrow(() -> new NoSuchElementException("role not found")));
+                        break;
+                    case "ROLE_MANAGER":
+                        roles.add(roleRepository.findRoleByRoleName(RoleName.ROLE_MANAGER).orElseThrow(() -> new NoSuchElementException("role not found")));
                         break;
                 }
             });
         } else {
-            roles.add(roleRepository.findRoleByRoleName("ROLE_USER").orElseThrow(() -> new NoSuchElementException("role not found")));
+            roles.add(roleRepository.findRoleByRoleName(RoleName.ROLE_USER).orElseThrow(() -> new NoSuchElementException("role not found")));
         }
         user.setRoles(roles);
         userRepository.save(user);
