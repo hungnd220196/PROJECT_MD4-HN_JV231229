@@ -16,6 +16,7 @@ import java.util.UUID;
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_id", nullable = false)
     private Long productId;
 
     @Column(nullable = false, unique = true, length = 100)

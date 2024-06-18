@@ -2,19 +2,17 @@ package com.ra.project_module4.controller;
 
 import com.ra.project_module4.exception.DataExistException;
 import com.ra.project_module4.model.dto.request.FormCategoryRequest;
+import com.ra.project_module4.model.dto.request.FormChangeOrderStatus;
 import com.ra.project_module4.model.dto.request.FormProductRequest;
+import com.ra.project_module4.model.dto.response.OrderResponseRoleAdmin;
 import com.ra.project_module4.model.dto.response.ProductResponse;
 import com.ra.project_module4.model.dto.response.ResponseDtoSuccess;
 import com.ra.project_module4.model.entity.Category;
 import com.ra.project_module4.model.entity.Product;
 import com.ra.project_module4.model.entity.User;
-import com.ra.project_module4.service.CategoryService;
-import com.ra.project_module4.service.ProductService;
-import com.ra.project_module4.service.RoleService;
-import com.ra.project_module4.service.UserService;
+import com.ra.project_module4.service.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -37,6 +35,8 @@ public class AdminController {
     private ProductService productService;
     @Autowired
     private CategoryService categoryService;
+    @Autowired
+    private OrderService orderService;
 
     @GetMapping("/users")
     public ResponseEntity<?> getUsers(@RequestParam(defaultValue = "0") int page,
@@ -171,5 +171,35 @@ public class AdminController {
     public ResponseEntity<?> deleteCategory(@PathVariable Long categoryId) {
         categoryService.deleteById(categoryId);
         return new ResponseEntity<>(new ResponseDtoSuccess<>("Đã xoá thành công Danh mục có Id: " + categoryId, HttpStatus.OK), HttpStatus.OK);
+    }
+
+    // API: Danh sách tất cả đơn hàng: - /api.myservice.com/v1/admin/orders
+    @GetMapping("/orders")
+    public ResponseEntity<?> getAllOrder(Pageable pageable) {
+        Page<OrderResponseRoleAdmin> orderPage = orderService.getAllOrderRoleAdmin(pageable);
+        List<OrderResponseRoleAdmin> orderList = orderPage.getContent();
+        return new ResponseEntity<>(new ResponseDtoSuccess<>(orderList, HttpStatus.OK), HttpStatus.OK);
+    }
+
+    // API: Danh sách đơn hàng theo trạng thái - /api.myservice.com/v1/admin/orders/{orderStatus}
+    @GetMapping("/orders/{orderStatus}")
+    public ResponseEntity<?> getOrdersByStatus(@PathVariable String orderStatus, Pageable pageable) throws DataExistException {
+        Page<OrderResponseRoleAdmin> orderResponseRoleAdmins = orderService.findByStatusOrderStatusName(orderStatus, pageable);
+        List<OrderResponseRoleAdmin> orderList = orderResponseRoleAdmins.getContent();
+        return new ResponseEntity<>(new ResponseDtoSuccess<>(orderList, HttpStatus.OK), HttpStatus.OK);
+    }
+
+    // API: Chi tiết đơn hàng - /api.myservice.com/v1/admin/orders/{orderId}
+    @GetMapping("/orders2/{orderId}")
+    public ResponseEntity<?> getOrderById(@PathVariable Long orderId) {
+        OrderResponseRoleAdmin orderResponseRoleAdmin = orderService.getOrderById(orderId);
+        return new ResponseEntity<>(new ResponseDtoSuccess<>(orderResponseRoleAdmin, HttpStatus.OK), HttpStatus.OK);
+    }
+
+    // API: Cập nhật trạng thái đơn hàng (payload : orderStatus) - /api.myservice.com/v1/admin/orders/{orderId}/status
+    @PutMapping("/orders/{orderId}/status")
+    public ResponseEntity<?> changeOrderStatus(@PathVariable Long orderId, @RequestBody FormChangeOrderStatus formChangeOrderStatus) {
+        OrderResponseRoleAdmin orderResponseRoleAdmin = orderService.updateOrderStatusById(orderId, formChangeOrderStatus.getOrderStatusName());
+        return new ResponseEntity<>(new ResponseDtoSuccess<>(orderResponseRoleAdmin, HttpStatus.OK), HttpStatus.OK);
     }
 }

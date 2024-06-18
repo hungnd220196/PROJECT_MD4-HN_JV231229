@@ -1,15 +1,31 @@
 package com.ra.project_module4.service.imp;
 
+import com.ra.project_module4.exception.DataExistException;
+import com.ra.project_module4.model.dto.request.FormChangePasswordRequest;
+import com.ra.project_module4.model.dto.request.FormEditUserRequest;
+import com.ra.project_module4.model.dto.response.UserDetailResponse;
 import com.ra.project_module4.model.entity.User;
 import com.ra.project_module4.repository.UserRepository;
+import com.ra.project_module4.security.principals.CustomUserDetail;
 import com.ra.project_module4.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
+import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -18,6 +34,10 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     @Override
     public User findById(Long id) {
@@ -73,5 +93,75 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User Not Found"));
         user.setStatus(!user.getStatus());
         return userRepository.save(user);
+    }
+
+    @Override
+    public UserDetailResponse getUserDetail(CustomUserDetail userDetailsCustom) {
+        User user = findById(userDetailsCustom.getId());
+
+        List<? extends GrantedAuthority> authorityList = user.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.getRoleName().name())).toList();
+
+        return UserDetailResponse.builder()
+                .roleSet(authorityList)
+                .username(user.getUsername())
+                .phone(user.getPhone())
+                .avatar(user.getAvatar())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .address(user.getAddress())
+                .email(user.getEmail())
+                .fullName(user.getFullname())
+                .build();
+    }
+
+    @Override
+    public UserDetailResponse editUserDetail(CustomUserDetail userDetailsCustom, FormEditUserRequest formEditUserRequest) {
+//        String fileUrl = null;
+//        MultipartFile file = formEditUserRequest.getImage();
+//        if (file != null && !file.isEmpty()) {
+//            // Upload file nếu file không rỗng
+//            fileUrl = storageService.uploadFile(file);
+//        }
+
+        User user = findById(userDetailsCustom.getId());
+        user.setEmail(formEditUserRequest.getEmail());
+        user.setAddress(formEditUserRequest.getAddress());
+        user.setFullname(formEditUserRequest.getFullName());
+//        user.setAvatar(fileUrl);
+        user.setPhone(formEditUserRequest.getPhone());
+        user.setUpdatedAt(new Date());
+
+        userRepository.save(user);
+
+        return getUserDetail(userDetailsCustom);
+    }
+
+    @Override
+    public void changePassword(CustomUserDetail userDetailsCustom, FormChangePasswordRequest formChangePasswordRequest) throws DataExistException {
+        User user = findById(userDetailsCustom.getId());
+
+        // Xác thực thông qua username và password.
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), formChangePasswordRequest.getOldPass()));
+        } catch (AuthenticationException e) {
+            throw new DataExistException("Mật khẩu cũ không chính xác.", "Lỗi");
+        }
+        CustomUserDetail detailsCustom = (CustomUserDetail) authentication.getPrincipal();
+
+        if (isValidPassword(formChangePasswordRequest.getNewPass())) {
+            throw new DataExistException("Mật khẩu không đúng định dạng. Phải lớn hơn 8 kí tự, có chứa chữ In hoa và số!", "Lỗi");
+        }
+
+        if (!formChangePasswordRequest.getNewPass().equals(formChangePasswordRequest.getConfirmNewPass())) {
+            throw new DataExistException("Nhập lại mật khẩu không đúng!", "Lỗi");
+        }
+
+        user.setPassword(passwordEncoder.encode(formChangePasswordRequest.getNewPass()));
+        userRepository.save(user);
+    }
+    private boolean isValidPassword(String password) {
+        return password.length() >= 8 && password.matches(".*[A-Z].*") && password.matches(".*\\d.*");
     }
 }

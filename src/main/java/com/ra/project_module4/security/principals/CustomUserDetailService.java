@@ -32,7 +32,6 @@ public class CustomUserDetailService implements UserDetailsService {
                 .email(user.getEmail())
                 .status(user.getStatus())
                 .authorities(mapToAuthorities(user.getRoles()))
-
                 .build();
     }
 

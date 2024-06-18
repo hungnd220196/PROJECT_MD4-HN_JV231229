@@ -31,13 +31,9 @@ public class Order {
     @Column(nullable = false)
     private Double totalPrice;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Status status;
-
-    public enum Status {
-        WAITING, CONFIRM, DELIVERY, SUCCESS, CANCEL, DENIED
-    }
+    @Enumerated(EnumType.STRING)
+    private OrderStatusName status;
 
     private String note;
 
