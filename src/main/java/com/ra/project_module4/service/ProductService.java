@@ -8,6 +8,7 @@ import com.ra.project_module4.model.entity.Category;
 import com.ra.project_module4.model.entity.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -20,7 +21,7 @@ public interface ProductService {
 
     void deleteById(Long id);
 
-    List<Product> findByProductNameContaining(String proName);
+    List<Product> findByNameOrDescriptionContaining(String searchTerm);
 
     List<Product> findFirst10ByOrderByCreatedAtDesc();
 

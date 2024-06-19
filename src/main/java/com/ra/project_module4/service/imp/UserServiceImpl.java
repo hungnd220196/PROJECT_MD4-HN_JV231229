@@ -31,13 +31,17 @@ import java.util.Optional;
 @Service
 public class UserServiceImpl implements UserService {
 
-
     @Autowired
     private UserRepository userRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Override
+    public boolean existsUsername(String username) {
+        return userRepository.existsByUsername(username);
+    }
 
     @Override
     public User findById(Long id) {
@@ -162,6 +166,6 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
     private boolean isValidPassword(String password) {
-        return password.length() >= 8 && password.matches(".*[A-Z].*") && password.matches(".*\\d.*");
+        return password.length() >= 8;
     }
 }

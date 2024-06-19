@@ -7,7 +7,9 @@ import com.ra.project_module4.model.entity.Product;
 import com.ra.project_module4.service.CategoryService;
 import com.ra.project_module4.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +28,7 @@ public class ProductController {
     // API: Chức năng Tìm kiếm Sản phẩm theo tên.
     @GetMapping("/search")
     public ResponseEntity<?> search(@RequestParam(name = "search") String search) {
-        List<Product> productList = productService.findByProductNameContaining(search);
+        List<Product> productList = productService.findByNameOrDescriptionContaining(search);
         if (productList.isEmpty()) {
             return new ResponseEntity<>("Không tìm thấy Sản phẩm có tên: " + search, HttpStatus.NOT_FOUND);
         }
@@ -35,7 +37,12 @@ public class ProductController {
 
     // API: Danh sách sản phẩm được bán(có phân trang và sắp xếp)
     @GetMapping
-    public ResponseEntity<?> getAllProduct(Pageable pageable) {
+    public ResponseEntity<?> getAllProduct(@RequestParam(defaultValue = "0") int page,
+                                           @RequestParam(defaultValue = "2") int size,
+                                           @RequestParam(defaultValue = "productId") String sortBy,
+                                           @RequestParam(defaultValue = "asc") String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
         PageDTO<ProductResponse> productResponsePageDTO = productService.getAllProductRolePermitAll(pageable);
         return new ResponseEntity<>(new ResponseDtoSuccess<>(productResponsePageDTO, HttpStatus.OK), HttpStatus.OK);
     }
@@ -50,6 +57,7 @@ public class ProductController {
 
     private ProductResponse convertToProductResponse(Product product) {
         return ProductResponse.builder()
+                .productId(product.getProductId())
                 .sku(product.getSku())
                 .productName(product.getProductName())
                 .description(product.getDescription())

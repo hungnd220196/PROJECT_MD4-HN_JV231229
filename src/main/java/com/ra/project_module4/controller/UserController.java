@@ -1,15 +1,9 @@
 package com.ra.project_module4.controller;
 
 import com.ra.project_module4.exception.DataExistException;
-import com.ra.project_module4.model.dto.request.FormAddToCartRequest;
-import com.ra.project_module4.model.dto.request.FormChangePasswordRequest;
-import com.ra.project_module4.model.dto.request.FormChangeQuantityCartItem;
-import com.ra.project_module4.model.dto.request.FormEditUserRequest;
-import com.ra.project_module4.model.dto.response.OrderResponse;
-import com.ra.project_module4.model.dto.response.ResponseDtoSuccess;
-import com.ra.project_module4.model.dto.response.ShoppingCartResponse;
-import com.ra.project_module4.model.dto.response.UserDetailResponse;
-import com.ra.project_module4.model.entity.Product;
+import com.ra.project_module4.model.dto.request.*;
+import com.ra.project_module4.model.dto.response.*;
+import com.ra.project_module4.model.entity.Address;
 import com.ra.project_module4.model.entity.ShoppingCart;
 import com.ra.project_module4.model.entity.User;
 import com.ra.project_module4.security.principals.CustomUserDetail;
@@ -39,6 +33,8 @@ public class UserController {
     private OrderService orderService;
     @Autowired
     private AddressService addressService;
+    @Autowired
+    private WishListService wishListService;
 
     //hien thi san pham trong gio hang
     @GetMapping("/cart/list")
@@ -115,26 +111,42 @@ public class UserController {
     }
 
 
-    //lay ra danh sach dia chi user
-    @GetMapping("/account/addresses")
-    public ResponseEntity<?> getUserAddresses(@AuthenticationPrincipal CustomUserDetail userDetailsCustom) {
-
-        return new ResponseEntity<>(new ResponseDtoSuccess<>(addressService.findAddressByUser(userDetailsCustom.getId()), HttpStatus.OK), HttpStatus.OK);
-    }
-    // lay dia chi nguoi dung bang addressId
-    @GetMapping("/account/addresses/{addressId}")
-    public ResponseEntity<?> getUserAddress(@PathVariable Long addressId) {
-        return new ResponseEntity<>(new ResponseDtoSuccess<>(addressService.getAddressByID(addressId), HttpStatus.OK), HttpStatus.OK);
-    }
-
     //  Cập nhật thông tin người dùng - /api.myservice.com/v1/user/account
     @PutMapping("/account")
-    public ResponseEntity<?> updateUserDetail(@AuthenticationPrincipal CustomUserDetail userDetailsCustom, @ModelAttribute FormEditUserRequest formEditUserRequest) throws IOException {
+    public ResponseEntity<?> updateUserDetail(@AuthenticationPrincipal CustomUserDetail userDetailsCustom, @ModelAttribute FormEditUserRequest formEditUserRequest)  {
         // Cập nhật thông tin người dùng
         UserDetailResponse userDetailResponse = userService.editUserDetail(userDetailsCustom, formEditUserRequest);
 
         return new ResponseEntity<>(new ResponseDtoSuccess<>(userDetailResponse, HttpStatus.OK), HttpStatus.OK);
     }
+
+
+    @PostMapping("/account/addresses")
+    public ResponseEntity<?> addAddress(@RequestBody AddressRequest addressRequest, @AuthenticationPrincipal CustomUserDetail customUserDetail) {
+        return new ResponseEntity<>(new ResponseDtoSuccess<>(addressService.addAddress(addressRequest, userService.findById(customUserDetail.getId())), HttpStatus.OK), HttpStatus.OK);
+
+    }
+
+    @DeleteMapping("/account/addresses/{addressId}")
+    public ResponseEntity<?> deleteAddress(@PathVariable Long addressId) {
+        addressService.deleteAddress(addressId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+
+    @GetMapping("/account/addresses")
+    public ResponseEntity<List<Address>> getAddresses(@AuthenticationPrincipal CustomUserDetail customUserDetail) {
+
+        return new ResponseEntity<>(addressService.getAddresses(), HttpStatus.OK);
+    }
+
+
+    @GetMapping("/addresses/{addressId}")
+    public ResponseEntity<List<String>> getAddress(@PathVariable Long addressId) {
+        List<String> addressDetails = addressService.getAddress(addressId);
+        return ResponseEntity.ok(addressDetails);
+    }
+
 
     //  Thay đổi mật khẩu (payload : oldPass, newPass, confirmNewPass): - /api.myservice.com/v1/user/account/change-password
     @PutMapping("/account/change-password")
@@ -162,5 +174,26 @@ public class UserController {
         return new ResponseEntity<>(new ResponseDtoSuccess<>(orderService.findByUserAndStatusOrderStatusName(userDetailsCustom, orderStatus, pageable), HttpStatus.OK), HttpStatus.OK);
     }
 
+    @PostMapping("/wish-list")
+    public ResponseEntity<WishListResponse> addProductToWishList(@RequestParam Long productId, @AuthenticationPrincipal CustomUserDetail customUserDetail) {
+
+        return new ResponseEntity<>(wishListService.addProductToWishlist(productId, customUserDetail.getId()), HttpStatus.OK);
+    }
+
+
+    @GetMapping("/wish-list")
+    public ResponseEntity<List<WishListResponse>> getWishList(@AuthenticationPrincipal CustomUserDetail customUserDetail) {
+        List<WishListResponse> wishListResponses = wishListService.getWishList(userService.findById(customUserDetail.getId()));
+        return ResponseEntity.ok(wishListResponses);
+    }
+
+    @DeleteMapping("/{wishListId}")
+    public ResponseEntity<WishListResponse> deleteProductFromWishlist(@PathVariable Long wishListId) {
+        WishListResponse wishListResponse = wishListService.deleteProductFromWishlist(wishListId);
+        if (wishListResponse != null) {
+            return ResponseEntity.ok(wishListResponse);
+        }
+        return ResponseEntity.notFound().build();
+    }
 }
 

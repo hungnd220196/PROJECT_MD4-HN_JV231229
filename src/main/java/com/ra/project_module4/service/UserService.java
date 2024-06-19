@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import java.util.Optional;
 
 public interface UserService {
+    boolean existsUsername(String username);
     User findById(Long id);
 
     Optional<User> findByUsername(String username);

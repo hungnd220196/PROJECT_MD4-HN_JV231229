@@ -4,7 +4,6 @@ import com.ra.project_module4.model.entity.Product;
 import com.ra.project_module4.model.entity.ShoppingCart;
 import com.ra.project_module4.model.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 import java.util.Optional;
 

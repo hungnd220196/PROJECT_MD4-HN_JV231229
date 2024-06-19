@@ -40,6 +40,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean register(DtoFormRegister dtoFormRegister) {
+        if (userRepository.existsByUsername(dtoFormRegister.getUsername())) {
+            return false;
+        }
         User user = User.builder()
                 .username(dtoFormRegister.getUsername())
                 .password(passwordEncoder.encode(dtoFormRegister.getPassword()))
