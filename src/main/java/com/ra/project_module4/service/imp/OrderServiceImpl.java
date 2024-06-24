@@ -3,12 +3,10 @@ package com.ra.project_module4.service.imp;
 import com.ra.project_module4.exception.DataExistException;
 import com.ra.project_module4.model.dto.response.OrderResponse;
 import com.ra.project_module4.model.dto.response.OrderResponseRoleAdmin;
-import com.ra.project_module4.model.entity.Order;
-import com.ra.project_module4.model.entity.OrderDetail;
-import com.ra.project_module4.model.entity.OrderStatusName;
-import com.ra.project_module4.model.entity.User;
+import com.ra.project_module4.model.entity.*;
 import com.ra.project_module4.repository.OrderDetailRepository;
 import com.ra.project_module4.repository.OrderRepository;
+import com.ra.project_module4.repository.ProductRepository;
 import com.ra.project_module4.security.principals.CustomUserDetail;
 import com.ra.project_module4.service.OrderService;
 import com.ra.project_module4.service.UserService;
@@ -20,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -29,6 +28,8 @@ public class OrderServiceImpl implements OrderService {
     private OrderRepository orderRepository;
     @Autowired
     private OrderDetailRepository orderDetailRepository;
+    @Autowired
+    private ProductRepository productRepository;
 
     @Override
     public Page<Order> findAll(Pageable pageable) {
@@ -64,7 +65,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Page<OrderResponseRoleAdmin> getAllOrderRoleAdmin(Pageable pageable) {
         Page<Order> orderPage = orderRepository.findAll(pageable);
-        return getOrderResponseRoleAdmins(pageable,orderPage);
+        return getOrderResponseRoleAdmins(pageable, orderPage);
     }
 
     private Page<OrderResponseRoleAdmin> getOrderResponseRoleAdmins(Pageable pageable, Page<Order> orderRepositoryByStatusOrderStatusName) {
@@ -89,7 +90,22 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Page<OrderResponseRoleAdmin> findByStatusOrderStatusName(String status, Pageable pageable) throws DataExistException {
-        return null;
+        Page<Order> ordersPage = orderRepository.findByStatus(OrderStatusName.valueOf(status), pageable);
+        if (ordersPage.isEmpty()) {
+            throw new DataExistException("No orders found with the specified status.", "Loi");
+        }
+
+        return ordersPage.map(order -> OrderResponseRoleAdmin.builder()
+                .serialNumber(order.getSerialNumber())
+                .totalPrice(order.getTotalPrice())
+                .status(String.valueOf(OrderStatusName.valueOf(status)))
+                .note(order.getNote())
+                .receiveName(order.getReceiveName())
+                .receiveAddress(order.getReceiveAddress())
+                .receivePhone(order.getReceivePhone())
+                .createdAt(order.getCreatedAt())
+                .receivedAt(order.getReceivedAt())
+                .build());
     }
 
     @Override
@@ -99,7 +115,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderResponseRoleAdmin updateOrderStatusById(Long orderId, OrderStatusName status) {
-        Order order = orderRepository.findById(orderId).orElseThrow(()-> new NoSuchElementException("Order not found"));
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new NoSuchElementException("Order not found"));
         order.setStatus(status);
         orderRepository.save(order);
 
@@ -108,7 +124,24 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<OrderResponse> findByUser(CustomUserDetail userDetailsCustom, Pageable pageable) throws DataExistException {
-        return List.of();
+        List<Order> orders = orderRepository.findByUserId(userDetailsCustom.getId(), pageable);
+        if (orders.isEmpty()) {
+            throw new DataExistException("No order history found for user.", "Loi");
+        }
+
+        return orders.stream()
+                .map(order -> OrderResponse.builder()
+                        .serialNumber(order.getSerialNumber())
+                        .totalPrice(order.getTotalPrice())
+                        .note(order.getNote())
+                        .receiveName(order.getReceiveName())
+                        .receiveAddress(order.getReceiveAddress())
+                        .receivePhone(order.getReceivePhone())
+                        .createdAt(order.getCreatedAt())
+                        .receivedAt(order.getReceivedAt())
+                        .build())
+                .collect(Collectors.toList());
+
     }
 
     @Override
@@ -162,5 +195,23 @@ public class OrderServiceImpl implements OrderService {
             orderResponseList.add(orderResponse);
         }
         return orderResponseList;
+    }
+
+    @Override
+    public Order cancelOrder(Long orderId) {
+        Order orders = orderRepository.findById(orderId).orElseThrow(() -> new NoSuchElementException("Order not found"));
+        List<OrderDetail> orderDetails = orderDetailRepository.getOrderDetailsByOrderId(orderId);
+        if (orders.getStatus() == OrderStatusName.WAITING) {
+            orders.setStatus(OrderStatusName.CANCEL);
+            for (OrderDetail orderDetail : orderDetails) {
+                Product product = productRepository.findById(orderDetail.getProduct().getProductId()).orElseThrow(() -> new NoSuchElementException("Product not found"));
+                product.setStockQuantity(product.getStockQuantity() + orderDetail.getOrderQuantity());
+                productRepository.save(product);
+            }
+            orderRepository.save(orders);
+        } else {
+            throw new RuntimeException("Order status is not WAITING");
+        }
+        return null;
     }
 }

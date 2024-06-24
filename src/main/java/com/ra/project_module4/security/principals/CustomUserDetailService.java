@@ -1,5 +1,6 @@
 package com.ra.project_module4.security.principals;
 
+import com.ra.project_module4.exception.UserBlockException;
 import com.ra.project_module4.model.entity.Role;
 import com.ra.project_module4.model.entity.User;
 import com.ra.project_module4.repository.UserRepository;

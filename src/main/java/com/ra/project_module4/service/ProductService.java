@@ -32,4 +32,8 @@ public interface ProductService {
     Product save(FormProductRequest formProductRequest, Long productId);
 
      PageDTO<ProductResponse> getAllProductRolePermitAll(Pageable pageable);
+
+    List<ProductResponse> getAllProducts(Pageable pageable);
+
+    ProductResponse getProductDetailsById(Long productId);
 }

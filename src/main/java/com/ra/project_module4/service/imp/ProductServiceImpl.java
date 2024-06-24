@@ -120,4 +120,51 @@ public class ProductServiceImpl implements ProductService {
         }
         return new PageDTO<>(new PageImpl<>(productResponseList, pageable, productPage.getTotalElements()));
     }
+
+    @Override
+    public List<ProductResponse> getAllProducts(Pageable pageable) {
+        Page<Product> productPage = productRepository.findAll(pageable);
+        List<Product> productList = productPage.getContent();
+        return convertToProductResponseList(productList);
+    }
+
+    private List<ProductResponse> convertToProductResponseList(List<Product> productList) {
+        List<ProductResponse> productResponseList = new ArrayList<>();
+        for (Product product : productList) {
+            ProductResponse productResponse = ProductResponse.builder()
+                    .productId(product.getProductId())
+                    .sku(product.getSku())
+                    .productName(product.getProductName())
+                    .description(product.getDescription())
+                    .unitPrice(product.getUnitPrice())
+                    .stockQuantity(product.getStockQuantity())
+                    .image(product.getImage())
+                    .category(product.getCategory().getCategoryName())
+                    .createdAt(product.getCreatedAt())
+                    .updatedAt(product.getUpdatedAt())
+                    .build();
+            productResponseList.add(productResponse);
+        }
+        return productResponseList;
+    }
+
+    @Override
+    public ProductResponse getProductDetailsById(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new NoSuchElementException("Product not found with id " + productId));
+
+        return ProductResponse.builder()
+                .productId(product.getProductId())
+                .sku(product.getSku())
+                .productName(product.getProductName())
+                .description(product.getDescription())
+                .unitPrice(product.getUnitPrice())
+                .stockQuantity(product.getStockQuantity())
+                .image(product.getImage())
+                .category(product.getCategory().getCategoryName())
+                .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
+                .build();
+    }
+
 }

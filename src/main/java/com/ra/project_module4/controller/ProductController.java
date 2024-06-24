@@ -47,7 +47,30 @@ public class ProductController {
         return new ResponseEntity<>(new ResponseDtoSuccess<>(productResponsePageDTO, HttpStatus.OK), HttpStatus.OK);
     }
 
-    // Chuyển đổi đối tượng Product sang DTO
+
+    // API: Danh sách Sản phẩm mới: Lấy ra 10 Sản phẩm được thêm gần đây nhất
+    @GetMapping("/new-products")
+    public ResponseEntity<?> getNewProducts() {
+        List<Product> productList = productService.findFirst10ByOrderByCreatedAtDesc();
+        return getResponseEntity(productList);
+    }
+
+
+    // API: Danh sách Sản phẩm theo Danh Mục
+    @GetMapping("/categories/{categoryId}")
+    public ResponseEntity<?> getProductsByCategory(@PathVariable Long categoryId) {
+        List<Product> productList = productService.findByCategory(categoryService.findById(categoryId));
+        return getResponseEntity(productList);
+    }
+
+    // API: Chi tiết Sản phẩm theo ID
+    @GetMapping("/{productId}")
+    public ResponseEntity<?> getDetailsProductById(@PathVariable Long productId) {
+        ProductResponse productResponse = productService.getProductDetailsById(productId);
+        return new ResponseEntity<>(new ResponseDtoSuccess<>(productResponse, HttpStatus.OK), HttpStatus.OK);
+    }
+
+    // Chuyển đổi đối tượng Product
     private ResponseEntity<?> getResponseEntity(List<Product> productList) {
         List<ProductResponse> productResponses = productList.stream()
                 .map(this::convertToProductResponse)
@@ -68,43 +91,5 @@ public class ProductController {
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();
-    }
-
-
-    // API: Danh sách Sản phẩm mới: Lấy ra 10 Sản phẩm được thêm gần đây nhất
-    @GetMapping("/new-products")
-    public ResponseEntity<?> getNewProducts() {
-        List<Product> productList = productService.findFirst10ByOrderByCreatedAtDesc();
-        return getResponseEntity(productList);
-    }
-
-
-    // API: Danh sách Sản phẩm theo Danh Mục
-    @GetMapping("/categories/{categoryId}")
-    public ResponseEntity<?> getProductsByCategory(@PathVariable Long categoryId) {
-        List<Product> productList = productService.findByCategory(categoryService.findById(categoryId));
-        return getResponseEntity(productList);
-    }
-
-    // API: Chi tiết Sản phẩm theo ID
-    @GetMapping("/{productId}")
-    public ResponseEntity<?> getProductById(@PathVariable Long productId) {
-        Product product = productService.findById(productId);
-        if (product == null) {
-            return new ResponseEntity<>("Không tìm thấy Sản phẩm có ID: " + productId, HttpStatus.NOT_FOUND);
-        }
-        ProductResponse productResponse;
-        productResponse = ProductResponse.builder()
-                .sku(product.getSku())
-                .productName(product.getProductName())
-                .description(product.getDescription())
-                .unitPrice(product.getUnitPrice())
-                .stockQuantity(product.getStockQuantity())
-                .image(product.getImage())
-                .category(product.getCategory().getCategoryName())
-                .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt())
-                .build();
-        return new ResponseEntity<>(new ResponseDtoSuccess<>(productResponse, HttpStatus.OK), HttpStatus.OK);
     }
 }

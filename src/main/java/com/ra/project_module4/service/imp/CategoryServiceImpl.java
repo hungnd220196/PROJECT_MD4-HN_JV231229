@@ -46,8 +46,11 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Category save(FormCategoryRequest formCategoryRequest, Long categoryID) {
+    public Category save(FormCategoryRequest formCategoryRequest, Long categoryID) throws DataExistException {
         Category category = categoryRepository.findById(categoryID).orElseThrow(() -> new NoSuchElementException("Không tồn tại danh mục"));
+        if (categoryRepository.existsByCategoryName(formCategoryRequest.getCategoryName())) {
+            throw new DataExistException("Tên Danh mục đã tồn tại", "categoryName");
+        }
         category.setCategoryName(formCategoryRequest.getCategoryName());
         category.setDescription(formCategoryRequest.getDescription());
         return categoryRepository.save(category);

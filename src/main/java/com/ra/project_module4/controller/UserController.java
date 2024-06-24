@@ -8,14 +8,13 @@ import com.ra.project_module4.model.entity.ShoppingCart;
 import com.ra.project_module4.model.entity.User;
 import com.ra.project_module4.security.principals.CustomUserDetail;
 import com.ra.project_module4.service.*;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,11 +112,9 @@ public class UserController {
 
     //  Cập nhật thông tin người dùng - /api.myservice.com/v1/user/account
     @PutMapping("/account")
-    public ResponseEntity<?> updateUserDetail(@AuthenticationPrincipal CustomUserDetail userDetailsCustom, @ModelAttribute FormEditUserRequest formEditUserRequest)  {
+    public ResponseEntity<?> updateUserDetail(@Valid @AuthenticationPrincipal CustomUserDetail userDetailsCustom, @ModelAttribute FormEditUserRequest formEditUserRequest)  {
         // Cập nhật thông tin người dùng
-        UserDetailResponse userDetailResponse = userService.editUserDetail(userDetailsCustom, formEditUserRequest);
-
-        return new ResponseEntity<>(new ResponseDtoSuccess<>(userDetailResponse, HttpStatus.OK), HttpStatus.OK);
+        return new ResponseEntity<>(new ResponseDtoSuccess<>(userService.editUserDetail(userDetailsCustom, formEditUserRequest), HttpStatus.OK), HttpStatus.OK);
     }
 
 
@@ -174,6 +171,11 @@ public class UserController {
         return new ResponseEntity<>(new ResponseDtoSuccess<>(orderService.findByUserAndStatusOrderStatusName(userDetailsCustom, orderStatus, pageable), HttpStatus.OK), HttpStatus.OK);
     }
 
+    @PutMapping("/history/{orderId}/cancel")
+    public ResponseEntity<?> cancelOrder(@PathVariable Long orderId) {
+        return new ResponseEntity<>(new ResponseDtoSuccess<>(orderService.cancelOrder(orderId), HttpStatus.OK), HttpStatus.OK);
+    }
+
     @PostMapping("/wish-list")
     public ResponseEntity<WishListResponse> addProductToWishList(@RequestParam Long productId, @AuthenticationPrincipal CustomUserDetail customUserDetail) {
 
@@ -195,5 +197,6 @@ public class UserController {
         }
         return ResponseEntity.notFound().build();
     }
+
 }
 

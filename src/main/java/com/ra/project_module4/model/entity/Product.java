@@ -2,8 +2,6 @@ package com.ra.project_module4.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.math.BigDecimal;
 import java.util.Date;
 import java.util.UUID;
 

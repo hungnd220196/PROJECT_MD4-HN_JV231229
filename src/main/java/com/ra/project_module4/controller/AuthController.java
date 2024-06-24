@@ -26,11 +26,11 @@ public class AuthController {
 
     @PostMapping("/auth/sign-up")
     public ResponseEntity<?> register(@Valid @RequestBody DtoFormRegister dtoFormRegister) {
-        if (userService.existsUsername(dtoFormRegister.getUsername())) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("message", "Username already exists");
-            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-        }
+//        if (userService.existsUsername(dtoFormRegister.getUsername())) {
+//            Map<String, String> errorResponse = new HashMap<>();
+//            errorResponse.put("message", "Username already exists");
+//            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+//        }
         boolean check = authService.register(dtoFormRegister);
         if (check) {
             Map<String, String> map = new HashMap<>();

@@ -1,6 +1,7 @@
 package com.ra.project_module4.controller;
 
 import com.ra.project_module4.exception.DataExistException;
+import com.ra.project_module4.model.dto.PageDTO;
 import com.ra.project_module4.model.dto.request.FormCategoryRequest;
 import com.ra.project_module4.model.dto.request.FormChangeOrderStatus;
 import com.ra.project_module4.model.dto.request.FormProductRequest;
@@ -14,12 +15,13 @@ import com.ra.project_module4.service.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +60,7 @@ public class AdminController {
     //search user theo tên
     @GetMapping("/users/search")
     public ResponseEntity<?> getUsersByName(@RequestParam("name") String name) {
-        return new ResponseEntity<>(userService.findByUsername(name), HttpStatus.OK);
+        return new ResponseEntity<>(userService.findByUsernameContainingIgnoreCase(name), HttpStatus.OK);
     }
 
     //khoa mo tai khoan nguoi dung
@@ -73,54 +75,27 @@ public class AdminController {
 
     // API: Lấy về Danh sách Tất cả Sản phẩm (có Sắp xếp và phân trang)
     @GetMapping("/products")
-    public ResponseEntity<?> getAllProduct(Pageable pageable) {
-        Page<Product> productPage = productService.findAll(pageable);
-        List<Product> productList = productPage.getContent();
-        return getProductResponseEntity(productList);
+    public ResponseEntity<?> getAllProduct(@RequestParam(defaultValue = "0") int page,
+                                           @RequestParam(defaultValue = "2") int size,
+                                           @RequestParam(defaultValue = "productId") String sortBy,
+                                           @RequestParam(defaultValue = "asc") String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        PageDTO<ProductResponse> productResponsePageDTO = productService.getAllProductRolePermitAll(pageable);
+        return new ResponseEntity<>(new ResponseDtoSuccess<>(productResponsePageDTO, HttpStatus.OK), HttpStatus.OK);
     }
 
-    static ResponseEntity<?> getProductResponseEntity(List<Product> productList) {
-        List<ProductResponse> productResponseList = new ArrayList<>();
-        for (Product product : productList) {
-            ProductResponse productResponse;
-            productResponse = ProductResponse.builder()
-                    .productId(product.getProductId())
-                    .sku(product.getSku())
-                    .productName(product.getProductName())
-                    .description(product.getDescription())
-                    .unitPrice(product.getUnitPrice())
-                    .stockQuantity(product.getStockQuantity())
-                    .image(product.getImage())
-                    .category(product.getCategory().getCategoryName())
-                    .createdAt(product.getCreatedAt())
-                    .updatedAt(product.getUpdatedAt())
-                    .build();
-            productResponseList.add(productResponse);
-        }
-        return new ResponseEntity<>(new ResponseDtoSuccess<>(productResponseList, HttpStatus.OK), HttpStatus.OK);
-    }
 
     // API: Thông tin chi tiết của Sản phẩm theo ID
     @GetMapping("/products/{productId}")
     public ResponseEntity<?> getDetailsProductById(@PathVariable Long productId) {
-        Product product = productService.findById(productId);
-        ProductResponse productResponse;
-        productResponse = ProductResponse.builder()
-                .sku(product.getSku())
-                .productName(product.getProductName())
-                .description(product.getDescription())
-                .unitPrice(product.getUnitPrice())
-                .stockQuantity(product.getStockQuantity())
-                .category(product.getCategory().getCategoryName())
-                .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt())
-                .build();
+        ProductResponse productResponse = productService.getProductDetailsById(productId);
         return new ResponseEntity<>(new ResponseDtoSuccess<>(productResponse, HttpStatus.OK), HttpStatus.OK);
     }
 
     // API: Thêm mới Sản phẩm
     @PostMapping("/products")
-    public ResponseEntity<?> addNewProduct(@RequestBody FormProductRequest formProductRequest) throws DataExistException {
+    public ResponseEntity<?> addNewProduct(@Valid @RequestBody FormProductRequest formProductRequest) throws DataExistException {
         Map<String, Object> map = new HashMap<>();
         Product product = productService.save(formProductRequest);
         map.put("Đã thêm thành công Sản phẩm: ", product);
@@ -142,7 +117,12 @@ public class AdminController {
 
     // API: Lấy về danh sách tất cả danh mục (sắp xếp và phân trang)
     @GetMapping("/categories")
-    public ResponseEntity<?> getAllCategory(Pageable pageable) {
+    public ResponseEntity<?> getAllCategory(@RequestParam(defaultValue = "0") int page,
+                                            @RequestParam(defaultValue = "2") int size,
+                                            @RequestParam(defaultValue = "categoryId") String sortBy,
+                                            @RequestParam(defaultValue = "asc") String sortDir) {
+        Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
         Page<Category> categoryPage = categoryService.findAll(pageable);
         return new ResponseEntity<>(new ResponseDtoSuccess<>(categoryPage, HttpStatus.OK), HttpStatus.OK);
     }
@@ -162,15 +142,15 @@ public class AdminController {
 
     // API: Chỉnh sửa thông tin danh mục
     @PutMapping("/categories/{categoryId}")
-    public ResponseEntity<?> updateCategory(@PathVariable Long categoryId, @RequestBody FormCategoryRequest categoryRequest) {
-        return new ResponseEntity<>(new ResponseDtoSuccess<>(categoryService.save(categoryService.save(categoryRequest, categoryId)), HttpStatus.OK), HttpStatus.OK);
+    public ResponseEntity<?> updateCategory(@PathVariable Long categoryId, @RequestBody FormCategoryRequest categoryRequest) throws DataExistException {
+        return new ResponseEntity<>(new ResponseDtoSuccess<>(categoryService.save(categoryRequest, categoryId), HttpStatus.OK), HttpStatus.OK);
     }
 
     // API: Xóa danh mục
     @DeleteMapping("/categories/{categoryId}")
     public ResponseEntity<?> deleteCategory(@PathVariable Long categoryId) {
         categoryService.deleteById(categoryId);
-        return new ResponseEntity<>(new ResponseDtoSuccess<>("Đã xoá thành công Danh mục có Id: " + categoryId, HttpStatus.OK), HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     // API: Danh sách tất cả đơn hàng: - /api.myservice.com/v1/admin/orders

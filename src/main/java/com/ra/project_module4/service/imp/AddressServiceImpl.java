@@ -47,7 +47,8 @@ public class AddressServiceImpl implements AddressService {
                     "Address ID: " + address.getAddressId(),
                     "Full Address: " + address.getFullAddress(),
                     "Phone: " + address.getPhone(),
-                    "Receive Name: " + address.getReceiveName()
+                    "Receive Name: " + address.getReceiveName(),
+                    "UserID"+ address.getUser().getUserId()
             );
         } else {
 

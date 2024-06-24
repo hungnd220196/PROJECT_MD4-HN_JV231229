@@ -30,4 +30,5 @@ public interface OrderService  {
     OrderResponse findBySerialNumber(String serialNumber, CustomUserDetail userDetailsCustom);
 
     List<OrderResponse> findByUserAndStatusOrderStatusName(CustomUserDetail userDetailsCustom, String status, Pageable pageable) throws DataExistException;
+    Order cancelOrder(Long orderId) ;
 }

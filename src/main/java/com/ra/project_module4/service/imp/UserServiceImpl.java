@@ -8,6 +8,7 @@ import com.ra.project_module4.model.entity.User;
 import com.ra.project_module4.repository.UserRepository;
 import com.ra.project_module4.security.principals.CustomUserDetail;
 import com.ra.project_module4.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     @Autowired
@@ -120,25 +122,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDetailResponse editUserDetail(CustomUserDetail userDetailsCustom, FormEditUserRequest formEditUserRequest) {
-//        String fileUrl = null;
-//        MultipartFile file = formEditUserRequest.getImage();
-//        if (file != null && !file.isEmpty()) {
-//            // Upload file nếu file không rỗng
-//            fileUrl = storageService.uploadFile(file);
-//        }
+    public User editUserDetail(CustomUserDetail userDetailsCustom, FormEditUserRequest formEditUserRequest) {
+        log.info("Editing user details for user ID: {}", userDetailsCustom.getId());
 
         User user = findById(userDetailsCustom.getId());
-        user.setEmail(formEditUserRequest.getEmail());
-        user.setAddress(formEditUserRequest.getAddress());
-        user.setFullname(formEditUserRequest.getFullName());
-//        user.setAvatar(fileUrl);
-        user.setPhone(formEditUserRequest.getPhone());
+        if (formEditUserRequest.getEmail() != null) user.setEmail(formEditUserRequest.getEmail());
+        if (formEditUserRequest.getAddress() != null) user.setAddress(formEditUserRequest.getAddress());
+        if (formEditUserRequest.getFullName() != null) user.setFullname(formEditUserRequest.getFullName());
+        if (formEditUserRequest.getPhone() != null) user.setPhone(formEditUserRequest.getPhone());
         user.setUpdatedAt(new Date());
 
         userRepository.save(user);
 
-        return getUserDetail(userDetailsCustom);
+        log.info("User details updated successfully for user ID: {}", user.getUserId());
+
+        return user;
     }
 
     @Override
@@ -155,7 +153,7 @@ public class UserServiceImpl implements UserService {
         CustomUserDetail detailsCustom = (CustomUserDetail) authentication.getPrincipal();
 
         if (isValidPassword(formChangePasswordRequest.getNewPass())) {
-            throw new DataExistException("Mật khẩu không đúng định dạng. Phải lớn hơn 8 kí tự, có chứa chữ In hoa và số!", "Lỗi");
+            throw new DataExistException("Mật khẩu không đúng định dạng. Phải lớn hơn 8 kí tự", "Lỗi");
         }
 
         if (!formChangePasswordRequest.getNewPass().equals(formChangePasswordRequest.getConfirmNewPass())) {
@@ -165,6 +163,12 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(formChangePasswordRequest.getNewPass()));
         userRepository.save(user);
     }
+
+    @Override
+    public List<User> findByUsernameContainingIgnoreCase(String username) {
+        return userRepository.findByUsernameContainingIgnoreCase(username);
+    }
+
     private boolean isValidPassword(String password) {
         return password.length() >= 8;
     }

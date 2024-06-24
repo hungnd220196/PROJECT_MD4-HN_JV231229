@@ -98,6 +98,7 @@ public class AuthServiceImpl implements AuthService {
                 .status(userDetail.getStatus())
                 .authorities(userDetail.getAuthorities())
                 .token(token)
+                .authType("Bearer")
                 .build();
     }
 }

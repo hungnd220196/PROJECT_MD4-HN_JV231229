@@ -17,4 +17,5 @@ public class JWTResponse {
     private Boolean status;
     private Collection<? extends GrantedAuthority> authorities;
     private String token;
+    private String authType;
 }

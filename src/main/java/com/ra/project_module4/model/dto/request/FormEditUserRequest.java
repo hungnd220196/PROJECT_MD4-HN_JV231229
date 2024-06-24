@@ -23,7 +23,4 @@ public class FormEditUserRequest {
 
     @JsonProperty("address")
     private String address;
-
-//    @JsonProperty("image")
-//    private MultipartFile image;
 }

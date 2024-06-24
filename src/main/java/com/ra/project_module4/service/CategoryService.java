@@ -17,7 +17,7 @@ public interface CategoryService {
 
     boolean existsByCategoryName(String categoryName);
 
-    Category save(FormCategoryRequest formCategoryRequest, Long categoryID);
+    Category save(FormCategoryRequest formCategoryRequest, Long categoryID) throws DataExistException;
 
     Category save(FormCategoryRequest categoryRequest) throws DataExistException;
 }
